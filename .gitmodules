@@ -1,3 +1,6 @@
 [submodule "gimp-plugin"]
 	path = gimp-plugin
 	url = https://github.com/OlfillasOdikno/Open-Volt-GIMPPlugin
+[submodule "library"]
+	path = library
+	url = https://github.com/OlfillasOdikno/Open-Volt-Library.git
