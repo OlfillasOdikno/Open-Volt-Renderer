@@ -9,7 +9,7 @@ import java.util.HashMap;
 import de.olfillasodikno.openvolt.lib.structures.RVBigCube;
 import de.olfillasodikno.openvolt.lib.structures.RVMesh;
 import de.olfillasodikno.openvolt.lib.structures.RVMeshBody;
-import de.olfillasodikno.openvolt.lib.structures.RVVector;
+import de.olfillasodikno.openvolt.lib.structures.RVVectorF;
 import de.olfillasodikno.openvolt.lib.structures.RVWorld;
 import de.olfillasodikno.openvolt.lib.utils.RVReader;
 
@@ -30,7 +30,7 @@ public class WorldRenderEngine extends RenderEngine {
 
 		ArrayList<RVMesh> toDisplay = new ArrayList<>();
 		for (RVBigCube big_cube : big_cubes) {
-			RVVector center = big_cube.getCenter();
+			RVVectorF center = big_cube.getCenter();
 			if (frustum) {
 				if (!cam.getFrustum().testAll(center.getX() / factor, center.getY() / factor, center.getZ() / factor,
 						big_cube.getSize() / factor)) {
@@ -39,9 +39,9 @@ public class WorldRenderEngine extends RenderEngine {
 				for (int i = 0; i < big_cube.getMesh_count(); i++) {
 					int idx = big_cube.getMesh_indices()[i];
 					RVMesh mesh = world.getMeshes()[idx];
-					center = mesh.getHeader().getBound_ball_center();
+					center = mesh.getHeader().getBound_ball().getCenter();
 					if (!cam.getFrustum().testAll(center.getX() / factor, center.getY() / factor,
-							center.getZ() / factor, mesh.getHeader().getBound_ball_radius() / factor)) {
+							center.getZ() / factor, mesh.getHeader().getBound_ball().getRadius() / factor)) {
 						continue;
 					}
 					toDisplay.add(mesh);
@@ -56,8 +56,8 @@ public class WorldRenderEngine extends RenderEngine {
 		}
 		HashMap<RVMesh, Float> dtMap = new HashMap<>();
 		toDisplay.forEach(m -> {
-			RVVector c = m.getHeader().getBound_ball_center();
-			float dt = cam.position.distance(c.getX(), c.getY(), c.getZ()) - m.getHeader().getBound_ball_radius();
+			RVVectorF c = m.getHeader().getBound_ball().getCenter();
+			float dt = cam.position.distance(c.getX(), c.getY(), c.getZ()) - m.getHeader().getBound_ball().getRadius();
 			dtMap.put(m, dt);
 		});
 
