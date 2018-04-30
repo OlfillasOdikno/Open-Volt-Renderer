@@ -1,9 +1,45 @@
 package de.olfillasodikno.openvolt.render;
 
-import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL11.GL_ALPHA_TEST;
+import static org.lwjgl.opengl.GL11.GL_BLEND;
+import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
+import static org.lwjgl.opengl.GL11.GL_CULL_FACE;
+import static org.lwjgl.opengl.GL11.GL_CW;
+import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
+import static org.lwjgl.opengl.GL11.GL_DEPTH_TEST;
+import static org.lwjgl.opengl.GL11.GL_GREATER;
+import static org.lwjgl.opengl.GL11.GL_LINES;
+import static org.lwjgl.opengl.GL11.GL_MODELVIEW;
+import static org.lwjgl.opengl.GL11.GL_PROJECTION;
+import static org.lwjgl.opengl.GL11.GL_QUADS;
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
+import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
+import static org.lwjgl.opengl.GL11.glAlphaFunc;
+import static org.lwjgl.opengl.GL11.glBegin;
+import static org.lwjgl.opengl.GL11.glBindTexture;
+import static org.lwjgl.opengl.GL11.glClear;
+import static org.lwjgl.opengl.GL11.glColor4f;
+import static org.lwjgl.opengl.GL11.glDisable;
+import static org.lwjgl.opengl.GL11.glEnable;
+import static org.lwjgl.opengl.GL11.glEnd;
+import static org.lwjgl.opengl.GL11.glFrontFace;
+import static org.lwjgl.opengl.GL11.glLineWidth;
+import static org.lwjgl.opengl.GL11.glLoadIdentity;
+import static org.lwjgl.opengl.GL11.glLoadMatrixf;
+import static org.lwjgl.opengl.GL11.glMatrixMode;
+import static org.lwjgl.opengl.GL11.glMultMatrixf;
+import static org.lwjgl.opengl.GL11.glPopMatrix;
+import static org.lwjgl.opengl.GL11.glPushMatrix;
+import static org.lwjgl.opengl.GL11.glRotatef;
+import static org.lwjgl.opengl.GL11.glScalef;
+import static org.lwjgl.opengl.GL11.glTexCoord2f;
+import static org.lwjgl.opengl.GL11.glTranslatef;
+import static org.lwjgl.opengl.GL11.glVertex3f;
 
 import java.io.File;
 import java.util.ArrayList;
+
+import javax.imageio.ImageIO;
 
 import de.olfillasodikno.openvolt.lib.structures.RVMeshBody;
 import de.olfillasodikno.openvolt.lib.structures.RVPolygon;
@@ -16,23 +52,32 @@ public class RenderEngine {
 
 	protected Camera cam;
 
-	private Texture[] textures;
-	
+	protected Texture[] textures;
+
+	private Texture defaultTexture;
+
 	private ArrayList<File> textureFiles;
-	
+
 	public RenderEngine() {
 		textureFiles = new ArrayList<>();
 	}
-	
+
 	public void init() {
 		cam = new Camera();
 		textures = new Texture[textureFiles.size()];
 		for (int i = 0; i < textures.length; i++) {
 			textures[i] = Texture.fromFile(textureFiles.get(i));
 		}
+		try {
+			defaultTexture = new Texture(ImageIO.read(getClass().getResourceAsStream("/default.bmp")));			
+		}catch (Exception e) {
+			e.printStackTrace();
+			return;
+		}
 	}
-	
-	public void update() {};
+
+	public void update() {
+	};
 
 	public void render() {
 
@@ -54,7 +99,7 @@ public class RenderEngine {
 		glMultMatrixf(cam.getViewMatrixBuffer());
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_TEXTURE_2D);
-		
+
 		renderContent();
 
 		glDisable(GL_TEXTURE_2D);
@@ -69,7 +114,8 @@ public class RenderEngine {
 		renderThing();
 	}
 
-	protected void renderContent() {}
+	protected void renderContent() {
+	}
 
 	private void renderThing() {
 		glMatrixMode(GL_PROJECTION);
@@ -104,8 +150,8 @@ public class RenderEngine {
 		glMatrixMode(GL_PROJECTION);
 		glPopMatrix();
 	}
-	
-	public void renderMeshBody(RVMeshBody body,float factor) {
+
+	public void renderMeshBody(RVMeshBody body, float factor) {
 		for (RVPolygon poly : body.getPolygons()) {
 
 			if (poly.isTranslucent()) {
@@ -152,9 +198,12 @@ public class RenderEngine {
 			glEnd();
 		}
 	}
-	
+
 	protected Texture getTexture(int idx) {
-		return textures[idx];
+		if (idx < textures.length && idx >= 0) {
+			return textures[idx];
+		}
+		return defaultTexture;
 	}
 
 	public void clean() {
@@ -178,7 +227,7 @@ public class RenderEngine {
 	public Camera getCam() {
 		return cam;
 	}
-	
+
 	public void addTexture(File file) {
 		textureFiles.add(file);
 	}
