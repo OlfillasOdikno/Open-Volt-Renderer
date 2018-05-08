@@ -1,12 +1,17 @@
 package de.olfillasodikno.openvolt.render.structures;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public abstract class Framework implements Runnable{
+	
+	protected static final Logger logger = Logger.getLogger(Framework.class.getName());
 
 	private String title;
 
 	private Window win;
 
-	private static double limitFPS = 1.0 / 60.0;
+	private double limitFPS = 1.0 / 60.0;
 
 	public Framework(String title, int width, int height) {
 		this.title = title;
@@ -52,7 +57,8 @@ public abstract class Framework implements Runnable{
 
 			if ((Timer.getTime() - startTime) / Timer.getFrequency() - living > 1.0) {
 				living++;
-				System.out.println("Game is living for: " + living + "s FPS: " + frames + " UPS:" + updates);
+				String message = String.format("Game is living for: %d s FPS: %d UPS: %d", living, frames, updates);
+				logger.log(Level.INFO, message);
 				updates = 0;
 				frames = 0;
 			}

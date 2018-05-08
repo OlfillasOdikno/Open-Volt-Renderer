@@ -18,7 +18,6 @@ import static org.lwjgl.opengl.GL11.glVertex3f;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 
 import de.olfillasodikno.openvolt.lib.structures.RVConvexHull;
@@ -40,24 +39,14 @@ public class HullRenderEngine extends RenderEngine {
 	}
 
 	@Override
-	public void update() {
-		super.update();
-	}
-
-	@Override
-	public void init() {
-		super.init();
-	}
-
-	@Override
 	protected void renderContent() {
 		glEnable(GL_CULL_FACE);
 		glDisable(GL_ALPHA_TEST);
 
 		glColor3f(1, 1, 0);
 		glLineWidth(3f);
-		for (int i = 0; i < hull.getConvex_hull_count(); i++) {
-			RVConvexHull chull = hull.getConvex_hulls()[i];
+		for (int i = 0; i < hull.getConvexHullCount(); i++) {
+			RVConvexHull chull = hull.getConvexHulls()[i];
 
 			// Draw Edges
 			glBegin(GL_LINES);
@@ -87,20 +76,13 @@ public class HullRenderEngine extends RenderEngine {
 			dtMap.put(s, dt);
 		});
 
-		toDisplay.sort(new Comparator<Sphere>() {
-
-			@Override
-			public int compare(Sphere a, Sphere b) {
-				return Float.compare(dtMap.get(b), dtMap.get(a));
-			}
-		});
+		toDisplay.sort((a,b)->Float.compare(dtMap.get(b), dtMap.get(a)));	
 
 		glLineWidth(1f);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glColor4f(1, 1, 1, 0.3f);
-		for (Sphere sphere : toDisplay) {
-			sphere.draw();
-		}
+		
+		toDisplay.forEach(Sphere::draw);
 
 		glColor4f(1, 1, 1, 1f);
 
@@ -110,7 +92,12 @@ public class HullRenderEngine extends RenderEngine {
 
 	@Override
 	public void clean() {
-		super.clean();
+		// Nothing to clean here
+	}
+
+	@Override
+	protected void onInput(int key, int type) {
+		// No Input needed
 	}
 
 	public static void main(String[] args) throws IOException {

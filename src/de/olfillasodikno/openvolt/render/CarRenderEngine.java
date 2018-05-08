@@ -6,27 +6,29 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.logging.Level;
 
 import javax.imageio.ImageIO;
 
 import de.olfillasodikno.openvolt.lib.structures.RVMeshBody;
 import de.olfillasodikno.openvolt.render.structures.Texture;
+import de.olfillasodikno.openvolt.render.utils.DrawUtils;
 
 public class CarRenderEngine extends RenderEngine {
 
 	private long lastMs = 0;
 
-	private static final long delay = 200;
+	private static final long DELAY = 200;
 
 	private ArrayList<RVMeshBody> meshes;
 
 	private ArrayList<Texture> textures;
-	private File textureFile;
 
 	private ImageUpdater updater;
 
+	private File textureFile;
+
 	public CarRenderEngine() {
-		super();
 		meshes = new ArrayList<>();
 		textures = new ArrayList<>();
 
@@ -34,7 +36,7 @@ public class CarRenderEngine extends RenderEngine {
 		try {
 			url = new URL("http://127.0.0.1:1337/");
 		} catch (MalformedURLException e) {
-			e.printStackTrace();
+			logger.log(Level.SEVERE, e.getMessage(), e.getCause());
 		}
 		updater = new ImageUpdater(url);
 	}
@@ -42,10 +44,10 @@ public class CarRenderEngine extends RenderEngine {
 	@Override
 	public void update() {
 		long now = System.currentTimeMillis();
-		if (now - lastMs >= delay) {
+		if (now - lastMs >= DELAY) {
 			BufferedImage last =updater.getLastImg();
 			if(last!= null) {
-				textures.add(new Texture(last));				
+				textures.add(new Texture(last));	
 			}
 			lastMs = now;
 		}
@@ -57,22 +59,20 @@ public class CarRenderEngine extends RenderEngine {
 		super.init();
 		Thread thread = new Thread(updater);
 		thread.start();
+		textures.add(textureManager.getDefaultTexture());
 		if(textureFile != null) {
 			textures.add(Texture.fromFile(textureFile));			
-		}else {
-			try {
-				textures.add(new Texture(ImageIO.read(getClass().getResourceAsStream("/default.bmp"))));
-			} catch (IOException e) {
-				e.printStackTrace();
-				return;
-			}
 		}
 	}
 
 	@Override
 	protected void renderContent() {
+		if (textures.size() > 1) {
+			Texture rem = textures.remove(0);
+			rem.clean();
+		}
 		for (RVMeshBody body : meshes) {
-			renderMeshBody(body, 1f);
+			DrawUtils.renderMeshBody(body, 1f, textures.get(0));
 		}
 	}
 
@@ -81,28 +81,14 @@ public class CarRenderEngine extends RenderEngine {
 	}
 
 	@Override
-	protected Texture getTexture(int idx) {
-		if (textures.size() > 1) {
-			Texture rem = textures.remove(0);
-			rem.clean();
-		}
-		return textures.get(0);
-	}
-
-	public void setTextureFile(File textureFile) {
-		this.textureFile = textureFile;
-	}
-
-	@Override
 	public void clean() {
 		updater.setShouldRun(false);
-		super.clean();
 	}
 
 	private static final class ImageUpdater implements Runnable {
 		private long lastMs = 0;
 
-		private static final long delay = 200;
+		private static final long DELAY = 200;
 
 		private BufferedImage lastImg;
 
@@ -122,11 +108,11 @@ public class CarRenderEngine extends RenderEngine {
 			}
 			while (shouldRun) {
 				long now = System.currentTimeMillis();
-				if (now - lastMs >= delay) {
+				if (now - lastMs >= DELAY) {
 					try {
 						lastImg = ImageIO.read(url);
 					} catch (IOException e) {
-						//e.printStackTrace();
+						logger.log(Level.SEVERE, e.getMessage(), e.getCause());
 					}
 					lastMs = now;
 				}
@@ -140,7 +126,15 @@ public class CarRenderEngine extends RenderEngine {
 		public BufferedImage getLastImg() {
 			return lastImg;
 		}
+	}
 
+	public void setTextureFile(File textureFile) {
+		this.textureFile = textureFile;
+	}
+
+	@Override
+	protected void onInput(int key, int type) {
+		//No input necessary
 	}
 
 }

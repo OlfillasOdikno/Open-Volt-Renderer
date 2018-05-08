@@ -6,11 +6,12 @@ import static org.lwjgl.opengl.GL11.glEnd;
 import static org.lwjgl.opengl.GL11.glTranslatef;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.joml.Vector3f;
 
 public class Sphere {
-	public ArrayList<Vector3f> toDraw;
+	public final List<Vector3f> toDraw;
 	private float radius;
 	private float x;
 	private float y;
@@ -58,7 +59,7 @@ public class Sphere {
 
 		r /= 2;
 
-		float tr = r * (float) (Math.sqrt(t * t + 1));
+		float tr = r * (float) (Math.sqrt(T * T + 1));
 		ArrayList<Vector3f> vecs = new ArrayList<>();
 		for (int i = 0; i < 4; i++) {
 			vecs.add(new Vector3f(i % 2 == 0 ? -r : r, i > 1 ? -tr : tr, 0));
@@ -72,14 +73,12 @@ public class Sphere {
 
 		Sphere sphere = new Sphere(x, y, z, r);
 
-		for (int i : indices) {
-			sphere.add(vecs.get(i));
-		}
+		indices.forEach(idx -> sphere.add(vecs.get(idx)));
 
 		return sphere;
 	}
 
-	private static final float t = (float) ((1.0 + Math.sqrt(5.0)) / 2.0);
+	private static final float T = (float) ((1.0 + Math.sqrt(5.0)) / 2.0);
 
 	private static final ArrayList<Integer> indices = new ArrayList<>();
 	static {

@@ -1,13 +1,13 @@
 package de.olfillasodikno.openvolt.render;
 
-import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL11.glViewport;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.logging.Logger;
 
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWCursorPosCallback;
-import org.lwjgl.glfw.GLFWKeyCallbackI;
 
 import de.olfillasodikno.openvolt.lib.utils.RVReader;
 import de.olfillasodikno.openvolt.render.structures.Camera;
@@ -15,18 +15,20 @@ import de.olfillasodikno.openvolt.render.structures.Framework;
 
 public class Engine extends Framework {
 
+	protected static final Logger logger = Logger.getLogger(Engine.class.getName());
+
 	private RenderEngine renderEngine;
 	private Camera cam;
 
 	private static float factor = 0.6f;
 
-	private boolean pressedKeys[];
+	private boolean[] pressedKeys;
 
-	private static final int width = 1024;
-	private static final int height = 768;
+	private static final int DEFAULT_WIDTH = 1024;
+	private static final int DDEFAULT_HEIGHT = 768;
 
 	public Engine(RenderEngine renderEngine) {
-		super("Render Engine", width, height);
+		super("Render Engine", DEFAULT_WIDTH, DDEFAULT_HEIGHT);
 		this.renderEngine = renderEngine;
 	}
 
@@ -82,33 +84,26 @@ public class Engine extends Framework {
 
 	private void initInput() {
 		pressedKeys = new boolean[6];
-		getWindow().setKeyCallback(new GLFWKeyCallbackI() {
-			@Override
-			public void invoke(long window, int key, int scancode, int action, int mods) {
-				if (key == GLFW.GLFW_KEY_ENTER && action == GLFW.GLFW_RELEASE) {
-					getWindow().setShouldResetCursor(!getWindow().isShouldResetCursor());
-					getWindow().resetCursor();
+		getWindow().setKeyCallback((window, key, scancode, action, mods) -> {
+			if (key == GLFW.GLFW_KEY_ENTER && action == GLFW.GLFW_RELEASE) {
+				getWindow().setShouldResetCursor(!getWindow().isShouldResetCursor());
+				getWindow().resetCursor();
 
-				}
-				if (key == GLFW.GLFW_KEY_Q) {
-					pressedKeys[0] = action != GLFW.GLFW_RELEASE;
-				}
-				if (key == GLFW.GLFW_KEY_E) {
-					pressedKeys[1] = action != GLFW.GLFW_RELEASE;
-				}
-				if (key == GLFW.GLFW_KEY_W) {
-					pressedKeys[2] = action != GLFW.GLFW_RELEASE;
-				}
-				if (key == GLFW.GLFW_KEY_S) {
-					pressedKeys[3] = action != GLFW.GLFW_RELEASE;
-				}
-				if (key == GLFW.GLFW_KEY_A) {
-					pressedKeys[4] = action != GLFW.GLFW_RELEASE;
-				}
-				if (key == GLFW.GLFW_KEY_D) {
-					pressedKeys[5] = action != GLFW.GLFW_RELEASE;
-				}
 			}
+			if (key == GLFW.GLFW_KEY_Q) {
+				pressedKeys[0] = action != GLFW.GLFW_RELEASE;
+			} else if (key == GLFW.GLFW_KEY_E) {
+				pressedKeys[1] = action != GLFW.GLFW_RELEASE;
+			} else if (key == GLFW.GLFW_KEY_W) {
+				pressedKeys[2] = action != GLFW.GLFW_RELEASE;
+			} else if (key == GLFW.GLFW_KEY_S) {
+				pressedKeys[3] = action != GLFW.GLFW_RELEASE;
+			} else if (key == GLFW.GLFW_KEY_A) {
+				pressedKeys[4] = action != GLFW.GLFW_RELEASE;
+			} else if (key == GLFW.GLFW_KEY_D) {
+				pressedKeys[5] = action != GLFW.GLFW_RELEASE;
+			}
+			renderEngine.onInput(key, action);
 		});
 
 		getWindow().setMouseCallback(new GLFWCursorPosCallback() {
@@ -116,8 +111,8 @@ public class Engine extends Framework {
 			@Override
 			public void invoke(long arg0, double x, double y) {
 				if (getWindow().isShouldResetCursor()) {
-					cam.rotation.y -= (float) ((x - getWindow().getWidth() / 2) / (float) getWindow().getWidth());
-					cam.rotation.x -= (float) ((y - getWindow().getHeight() / 2) / (float) getWindow().getHeight());
+					cam.rotation.y -= (float) ((x - getWindow().getWidth() / 2.0) / (float) getWindow().getWidth());
+					cam.rotation.x -= (float) ((y - getWindow().getHeight() / 2.0) / (float) getWindow().getHeight());
 					getWindow().resetCursor();
 				}
 			}
@@ -130,38 +125,33 @@ public class Engine extends Framework {
 
 	public static void main(String[] args) throws IOException {
 		if (args.length == 0) {
-			System.out.println("syntax: --mode <world|car> --input <filename>");
-			System.out.println("example: --mode car --input body.prm");
-			System.out.println("example: --mode world --input nhood1");
-			System.out.println("Control: WASDEQ for navigation");
-			System.out.println("Mouse: To toggle the mouse press enter.");
-			
-			System.out.println("Modes:");
-			System.out.println(" - World:	Place the .w and all .bmp files in your current directory");
-			System.out.println(" - Car:	The texture will be streamed by using the GIMP plugin.");
+			logger.info("syntax: --mode <world|car> --input <filename>");
+			logger.info("syntax: --mode <world|car> --input <filename>");
+			logger.info("example: --mode car --input body.prm");
+			logger.info("example: --mode world --input nhood1");
+			logger.info("Control: WASDEQ for navigation");
+			logger.info("Mouse: To toggle the mouse press enter.");
+
+			logger.info("Modes:");
+			logger.info(" - World:	Place the .w and all .bmp files in your current directory");
+			logger.info(" - Car:	The texture will be streamed by using the GIMP plugin.");
 			return;
 		}
 		String mode = null;
 		String input = null;
 		for (int i = 0; i < args.length; i++) {
-			if (args[i].equalsIgnoreCase("--mode")) {
-				if (i <= args.length - 2) {
-					i += 1;
-					mode = args[i];
-				}
-			} else if (args[i].equalsIgnoreCase("--input")) {
-				if (i <= args.length - 2) {
-					i += 1;
-					input = args[i];
-				}
+			if (args[i].equalsIgnoreCase("--mode") && i <= args.length - 2) {
+				mode = args[i + 1];
+			} else if (args[i].equalsIgnoreCase("--input") && i <= args.length - 2) {
+				input = args[i + 1];
 			}
 		}
 
 		RenderEngine renderer = null;
 		if (mode == null) {
-			System.err.println("please add the --mode parameter");
+			logger.warning("please add the --mode parameter");
 		} else if (input == null) {
-			System.err.println("please add the --input parameter");
+			logger.warning("please add the --input parameter");
 		} else if (mode.equalsIgnoreCase("world")) {
 			WorldRenderEngine worldRenderer = new WorldRenderEngine();
 			worldRenderer.load(input);
@@ -172,7 +162,7 @@ public class Engine extends Framework {
 			carRenderer.setTextureFile(null);
 			renderer = carRenderer;
 		} else {
-			System.err.println("UNKNOWN MODE");
+			logger.severe("UNKNOWN MODE");
 		}
 		if (renderer == null) {
 			return;

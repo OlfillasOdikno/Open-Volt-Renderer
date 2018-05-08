@@ -3,8 +3,8 @@ package de.olfillasodikno.openvolt.render;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
+import java.util.logging.Level;
 
 import de.olfillasodikno.openvolt.lib.structures.RVBigCube;
 import de.olfillasodikno.openvolt.lib.structures.RVMesh;
@@ -12,6 +12,8 @@ import de.olfillasodikno.openvolt.lib.structures.RVMeshBody;
 import de.olfillasodikno.openvolt.lib.structures.RVVectorF;
 import de.olfillasodikno.openvolt.lib.structures.RVWorld;
 import de.olfillasodikno.openvolt.lib.utils.RVReader;
+import de.olfillasodikno.openvolt.render.structures.Texture;
+import de.olfillasodikno.openvolt.render.utils.DrawUtils;
 
 public class WorldRenderEngine extends RenderEngine {
 	private RVWorld world;
@@ -24,54 +26,38 @@ public class WorldRenderEngine extends RenderEngine {
 	protected void renderContent() {
 		float factor = 100f;
 
-		boolean frustum = true;
-
-		RVBigCube[] big_cubes = world.getBcube();
+		RVBigCube[] bigCubes = world.getBcube();
 
 		ArrayList<RVMesh> toDisplay = new ArrayList<>();
-		for (RVBigCube big_cube : big_cubes) {
-			RVVectorF center = big_cube.getCenter();
-			if (frustum) {
+		for (RVBigCube bigCube : bigCubes) {
+			RVVectorF center = bigCube.getCenter();
+			if (!cam.getFrustum().testAll(center.getX() / factor, center.getY() / factor, center.getZ() / factor,
+					bigCube.getSize() / factor)) {
+				continue;
+			}
+			for (int i = 0; i < bigCube.getMeshCount(); i++) {
+				int idx = bigCube.getMeshIndices()[i];
+				RVMesh mesh = world.getMeshes()[idx];
+				center = mesh.getHeader().getBoundBall().getCenter();
 				if (!cam.getFrustum().testAll(center.getX() / factor, center.getY() / factor, center.getZ() / factor,
-						big_cube.getSize() / factor)) {
+						mesh.getHeader().getBoundBall().getRadius() / factor)) {
 					continue;
 				}
-				for (int i = 0; i < big_cube.getMesh_count(); i++) {
-					int idx = big_cube.getMesh_indices()[i];
-					RVMesh mesh = world.getMeshes()[idx];
-					center = mesh.getHeader().getBound_ball().getCenter();
-					if (!cam.getFrustum().testAll(center.getX() / factor, center.getY() / factor,
-							center.getZ() / factor, mesh.getHeader().getBound_ball().getRadius() / factor)) {
-						continue;
-					}
-					toDisplay.add(mesh);
-				}
-			} else {
-				for (int i = 0; i < big_cube.getMesh_count(); i++) {
-					int idx = big_cube.getMesh_indices()[i];
-					RVMesh mesh = world.getMeshes()[idx];
-					toDisplay.add(mesh);
-				}
+				toDisplay.add(mesh);
 			}
 		}
 		HashMap<RVMesh, Float> dtMap = new HashMap<>();
 		toDisplay.forEach(m -> {
-			RVVectorF c = m.getHeader().getBound_ball().getCenter();
-			float dt = cam.position.distance(c.getX(), c.getY(), c.getZ()) - m.getHeader().getBound_ball().getRadius();
+			RVVectorF c = m.getHeader().getBoundBall().getCenter();
+			float dt = cam.position.distance(c.getX(), c.getY(), c.getZ()) - m.getHeader().getBoundBall().getRadius();
 			dtMap.put(m, dt);
 		});
 
-		toDisplay.sort(new Comparator<RVMesh>() {
-
-			@Override
-			public int compare(RVMesh a, RVMesh b) {
-				return Float.compare(dtMap.get(b), dtMap.get(a));
-			}
-		});
+		toDisplay.sort((a, b) -> Float.compare(dtMap.get(b), dtMap.get(a)));
 
 		for (RVMesh mesh : toDisplay) {
 			RVMeshBody body = mesh.getBody();
-			renderMeshBody(body, factor);
+			DrawUtils.renderMeshBody(body, factor, textureManager);
 		}
 	}
 
@@ -79,7 +65,7 @@ public class WorldRenderEngine extends RenderEngine {
 		try {
 			world = RVReader.worldFromFile(new File(name + ".w"));
 		} catch (IOException e) {
-			e.printStackTrace();
+			logger.log(Level.SEVERE, e.getMessage(), e.getCause());
 			return;
 		}
 		for (int i = 97; i <= 122; i++) {
@@ -87,8 +73,18 @@ public class WorldRenderEngine extends RenderEngine {
 			if (!file.exists()) {
 				break;
 			}
-			addTexture(file);
+			textureManager.addTexture(Texture.fromFile(file));
 		}
 
+	}
+
+	@Override
+	protected void onInput(int key, int type) {
+		//No Input needed
+	}
+
+	@Override
+	public void clean() {
+		//Nothing to clean here
 	}
 }

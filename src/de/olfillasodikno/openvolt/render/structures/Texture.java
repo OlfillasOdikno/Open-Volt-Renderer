@@ -1,20 +1,38 @@
 package de.olfillasodikno.openvolt.render.structures;
 
-import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL12.*;
-import static org.lwjgl.opengl.GL13.*;
+import static org.lwjgl.opengl.GL11.GL_LINEAR;
+import static org.lwjgl.opengl.GL11.GL_RGBA;
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_MAG_FILTER;
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_MIN_FILTER;
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_WRAP_S;
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_WRAP_T;
+import static org.lwjgl.opengl.GL11.GL_UNSIGNED_BYTE;
+import static org.lwjgl.opengl.GL11.glBindTexture;
+import static org.lwjgl.opengl.GL11.glDeleteTextures;
+import static org.lwjgl.opengl.GL11.glGenTextures;
+import static org.lwjgl.opengl.GL11.glTexImage2D;
+import static org.lwjgl.opengl.GL11.glTexParameteri;
+import static org.lwjgl.opengl.GL12.GL_CLAMP_TO_EDGE;
+import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
+import static org.lwjgl.opengl.GL13.glActiveTexture;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 
 import org.lwjgl.BufferUtils;
 
 public class Texture {
+	
+	private static final Logger logger = Logger.getLogger(Texture.class.getName());
+	
 	private int id;
 
 	private int width;
@@ -23,13 +41,13 @@ public class Texture {
 	public Texture(BufferedImage img) {
 		width = img.getWidth();
 		height = img.getHeight();
-		int[] pixels_raw = new int[width * height];
-		img.getRGB(0, 0, width, height, pixels_raw, 0, width);
+		int[] rawPixels = new int[width * height];
+		img.getRGB(0, 0, width, height, rawPixels, 0, width);
 
 		ByteBuffer pixels = BufferUtils.createByteBuffer(width * height * 4);
 		for (int i = 0; i < width; i++) {
 			for (int j = 0; j < height; j++) {
-				int pixel = pixels_raw[i * height + j];
+				int pixel = rawPixels[i * height + j];
 				byte r = (byte) ((pixel >> 16) & 0xFF);
 				byte g = (byte) ((pixel >> 8) & 0xFF);
 				byte b = (byte) ((pixel) & 0xFF);
@@ -62,7 +80,7 @@ public class Texture {
 			BufferedImage img = ImageIO.read(f);
 			return new Texture(img);
 		} catch (IOException e) {
-			e.printStackTrace();
+			logger.log(Level.SEVERE, e.getMessage(), e.getCause());
 		}
 		return null;
 	}
@@ -72,7 +90,7 @@ public class Texture {
 			BufferedImage img = ImageIO.read(url);
 			return new Texture(img);
 		} catch (IOException e) {
-			e.printStackTrace();
+			logger.log(Level.SEVERE, e.getMessage(), e.getCause());
 		}
 		return null;
 	}
